@@ -12,11 +12,22 @@ use restApi\lib\model\UserModel;
 
 class UserController extends baseController
 {
+    /**
+     * UserController constructor.
+     */
     public function __construct()
     {
+        /**
+         * The accessRule is used to restrict/allow API access to users or guests.
+         */
         $this->accessRule = [];
     }
 
+    /**
+     * This function maps the method to the Request type it accepts.
+     * If the request type mentioned against the method is not provided, the request is not accepted.
+     * @return array - The Request type accepted by the defined method.
+     */
     public function verbs()
     {
         return [
@@ -24,6 +35,12 @@ class UserController extends baseController
         ];
     }
 
+    /**
+     * This method is used to authenticate the user and give them access to the restricted APIs.
+     * The method generates a new access-key on every request made.
+     * @return array - The access-key which is used access other APIs.
+     * @throws \Exception
+     */
     public function loginMethod(){
         if (!isset($_GET['username']) || !isset($_GET['password'])){
             throw new \Exception("User id & password missing.");
@@ -31,7 +48,7 @@ class UserController extends baseController
 
         $model = new UserModel();
         if ($model->isValidCredential($_GET['username'], $_GET['password'])){
-            $model->getAccessKey($_GET['username']);
+            return ['access-key'=>$model->getAccessKey($_GET['username'])];
         }
 
         else{

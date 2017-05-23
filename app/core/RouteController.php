@@ -33,6 +33,11 @@ class RouteController
 
     private function _setControllerClass(){
         // Get the controller class
+        if (!$this->controllerId){
+            global $config;
+            $this->controllerId = $config['defaultController'];
+        }
+
         if ($this->controllerId){
             $class = $this->libDir.'\\'.ucfirst($this->controllerId).'Controller';
             try{
@@ -42,6 +47,7 @@ class RouteController
             }
             $this->controllerObj = new $class();
         }
+
     }
 
     private function _setControllerMethod(){
@@ -66,16 +72,24 @@ class RouteController
         $reflectionMethod = $this->controllerClass->getMethod($this->methodId.'Method');
 //        $params = $reflectionMethod->getParameters();
 //        var_dump($params);
-        $reflectionMethod->invoke($this->controllerObj);
+        try{
+            $response = $reflectionMethod->invoke($this->controllerObj);
+            ResponseCollector::buildJSON($response);
+        } catch (\Throwable $e){
+            ResponseCollector::buildFailure($e);
+        }
     }
 
     public function exec(){
         // Validate the input Request.
         $this->controllerObj->validateRequest($this->methodId);
-        if (!$this->controllerObj->isGuestAllowed($this->methodId)){
-            // Validate the user.
+        try{
+            if (!$this->controllerObj->checkAccess($this->methodId)){
+                throw new \Exception("Not Allowed. This API is restricted.");
+            }
+        } catch (\Exception $e){
+            ResponseCollector::buildFailure($e);
         }
-
         $this->_invokeMethod();
     }
 }

@@ -24,7 +24,7 @@ class Controller
             'index' => ['GET', 'HEAD'],
             'view' => ['GET', 'HEAD'],
             'create' => ['POST'],
-            'update' => ['PUT', 'PATCH'],
+            'update' => ['PATCH'],
             'delete' => ['DELETE'],
         ];
     }
@@ -45,8 +45,15 @@ class Controller
     }
 
 
-    public function isGuestAllowed($methodId){
+    public function checkAccess($methodId){
+        global $config;
         if (isset($this->accessRule[$methodId]) && $this->accessRule[$methodId] == '@'){
+            if (isset($_GET['access_key']))
+            {
+                $userModel = new $config['userModel']();
+                if ($userModel->checkAccessByKey($_GET['access_key']))
+                    return true;
+            }
             return false; // Validate if the user is logged in and is authentic
         }
         return true;

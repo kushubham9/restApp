@@ -7,6 +7,13 @@
  */
 
 require_once dirname(__FILE__) . '/../bootstrap.php';
-$routeContoller = new restApi\core\RouteController();
 
-$routeContoller->exec();
+if (file_exists(__DIR__.'/installer.php')){
+    header("Location: installer.php");
+    die();
+}
+
+else{
+    $routeContoller = new restApi\core\RouteController();
+    $routeContoller->exec();
+}
