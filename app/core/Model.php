@@ -2,7 +2,7 @@
 /**
  * Created by PhpStorm.
  * User: Shu
- * Date: 22/05/17
+ * Date: 23/05/17
  * Time: 8:38 PM
  */
 
@@ -11,14 +11,25 @@ namespace restApi\core;
 
 class Model
 {
+    /**
+     * Used in the index method when results are fetched in page wise manner.
+     * @var int
+     */
     public $limitPerPage = 10;
 
+    /**
+     * @var - The table name to which the model maps to.
+     */
     public $table;
     /**
      * @var \MySQLi
      */
     private $db;
 
+    /**
+     * Establishes a DB Connection and returns a link.
+     * @return \MySQLi
+     */
     public function _getDbConnection(){
         global $config;
 //        {
@@ -36,12 +47,21 @@ class Model
         return $this->db;
     }
 
+    /**
+     * Closes a DB connection
+     */
     private function _closeDbConnection(){
-//        if ($this->db){
+        if ($this->db){
             $this->db->close();
-//        }
+        }
     }
 
+    /**
+     * option [] contains the different parameters which are used during the select query.
+     * 'AND' keyword is only configured atm with the WHERE parameter
+     * @param array $options
+     * @return string - The final query string
+     */
     private function _buildSelectQuery($options = []){
         $query = 'SELECT ';
         if (isset($options['select'])){
@@ -70,9 +90,16 @@ class Model
         return $query;
     }
 
+    /**
+     * Fetches only one record from the database.
+     * @param array $options
+     * @return array
+     * @throws \Exception
+     */
     public function fetchOne($options = []){
         try{
             $this->_getDbConnection();
+            $options['LIMIT'] = 1; // Fetch only 1 record.
             $query = $this->_buildSelectQuery($options);
             $result = $this->db->query($query);
 
@@ -87,6 +114,13 @@ class Model
         }
     }
 
+    /**
+     * Returns the count of the total records in the table.
+     * If query is provided, the number of rows after execution of query is returned.
+     * @param bool $query
+     * @return int
+     * @throws \Exception
+     */
     public function getRecordsCount($query = false){
         try{
             $this->_getDbConnection();
@@ -100,7 +134,13 @@ class Model
         }
     }
 
-
+    /**
+     * Fetches all the rows from the table.
+     * Returns an empty array if no records are found.
+     * @param array $options
+     * @return array|mixed
+     * @throws \Exception
+     */
     public function fetchAll($options = []){
         try{
             $this->_getDbConnection();
@@ -126,6 +166,13 @@ class Model
         }
     }
 
+    /**
+     *
+     * @param $table - The primary tabnle
+     * @param $whereCondition - Condition mapped as ['Column' => value]
+     * @param $updateValues - Condition mapped as ['Column' => value]
+     * @return string - Returns the final query string.
+     */
     private function _buildUpdateQuery($table, $whereCondition, $updateValues){
         $query = "UPDATE ". $table ." SET ";
         foreach ($updateValues as $key => $value){
@@ -141,6 +188,13 @@ class Model
         return $query;
     }
 
+    /**
+     * @param $table - Table to update
+     * @param $whereCondition - Condition mapped as ['Column' => value]
+     * @param $updateValues - Condition mapped as ['Column' => value]
+     * @return bool
+     * @throws \Exception
+     */
     public function updateRecord($table, $whereCondition, $updateValues){
         try{
             $this->_getDbConnection();
@@ -156,6 +210,11 @@ class Model
         }
     }
 
+    /**
+     * @param $table - The table name.
+     * @param $values - The values to be inserted mapped as [column=>value]
+     * @return string
+     */
     private function _buildInsertQuery($table, $values){
         $query = " INSERT INTO ". $table . '( '. implode(', ', array_keys($values)) .' )';
         $valueClause = implode('\',\'', array_values($values));
@@ -164,6 +223,13 @@ class Model
         return $query;
     }
 
+    /**
+     * This function is used to insert a record into a table.
+     * @param $table - Table name
+     * @param $values - The values to be inserted [$column => $value]
+     * @return bool
+     * @throws \Exception
+     */
     public function insertRecord($table, $values){
         try{
             $this->_getDbConnection();
@@ -179,6 +245,12 @@ class Model
         }
     }
 
+    /**
+     * Build a delete query.
+     * @param $table
+     * @param $condition
+     * @return string
+     */
     private function _deleteQuery($table, $condition){
         $query = " DELETE from ".$table;
         foreach ($condition as $key=>$value){
@@ -188,6 +260,13 @@ class Model
         return $query;
     }
 
+    /**
+     * Used to delete a single record from the table.
+     * @param $table
+     * @param $condition
+     * @return bool
+     * @throws \Exception
+     */
     public function deleteRecord($table, $condition){
         try{
             $this->_getDbConnection();

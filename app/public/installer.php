@@ -17,6 +17,7 @@ if (isset($_GET['submit']) && $_GET['submit'] == 'submit'){
     $installer = new restApi\core\ConfigMaker($config);
     if ($installer->exec()){
         unlink(__FILE__);
+        echo '<h2> Installation Successfull. </h2>';
         die();
     }
 }

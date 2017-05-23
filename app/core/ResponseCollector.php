@@ -11,6 +11,10 @@ namespace restApi\core;
 
 class ResponseCollector
 {
+    /**
+     * Used to get JSON encoded string.
+     * @param $data - The data returned after processing.
+     */
     public static function buildJSON($data){
         header("Content-Type: application/json;charset=utf-8");
         if (isset($data['fail_status'])){
@@ -33,6 +37,7 @@ class ResponseCollector
     }
 
     /**
+     * Used to handle case of exceptions.
      * @param $e \Exception
      */
     public static function buildFailure(\Exception $e){

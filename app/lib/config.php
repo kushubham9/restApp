@@ -9,8 +9,7 @@
 global $config;
 $config['userModel'] = '\restApi\lib\model\UserModel';
 $config['defaultController'] = 'product';
-$config['db']['userModel'] = '\restApi\lib\model\UserModel';
-$config['db']['host'] = 'localhost';
-$config['db']['database'] = 'test';
-$config['db']['user'] = 'root';
-$config['db']['pass'] = '';
+
+/**
+ * Other Properties.
+ */

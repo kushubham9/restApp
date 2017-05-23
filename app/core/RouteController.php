@@ -2,7 +2,7 @@
 /**
  * Created by PhpStorm.
  * User: Shu
- * Date: 22/05/17
+ * Date: 23/05/17
  * Time: 3:29 PM
  */
 
@@ -11,17 +11,23 @@ namespace restApi\core;
 
 class RouteController
 {
+
     private $requestUri;
+    /**
+     * Each controller is identified by its controller ID. All lowercase.
+     * @var string
+     */
     private $controllerId;
 
+    /**
+     * @var Controller
+     */
     private $controllerObj;
     /**
      * @var \ReflectionClass
      */
     private $controllerClass;
     private $methodId;
-    private $method;
-    private $arg;
     private $libDir = 'restApi\lib\controller';
 
     public function __construct()

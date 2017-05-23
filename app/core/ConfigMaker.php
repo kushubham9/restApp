@@ -11,17 +11,28 @@ namespace restApi\core;
 
 class ConfigMaker
 {
+    /**
+     * @var Stores the configuration input provided by the user.
+     */
     private $config;
+
     /**
      * @var \MySQLi
      */
     private $db;
 
+    /**
+     * ConfigMaker constructor.
+     * @param $dbConfig
+     */
     public function __construct($dbConfig)
     {
         $this->config = $dbConfig;
     }
 
+    /**
+     * Checks if the credentials of DB provided by the user is fine and working.
+     */
     private function _checkDbConnection(){
 
         $this->db = new \MySQLi(
@@ -36,6 +47,11 @@ class ConfigMaker
         }
     }
 
+    /**
+     * Creates 2 day zero tables required in the application. Product & User.
+     * A sample user 'admin'/'admin' is also created for further testing.
+     * @return bool
+     */
     private function _createTables(){
         $query[] = "CREATE TABLE products
                     (
@@ -67,6 +83,10 @@ class ConfigMaker
         }
     }
 
+    /**
+     * Writes the configuration file which is loaded during the bootstrap process.
+     * app/lib/config.php
+     */
     private function _writeConfigFile(){
         $f = fopen(dirname(__FILE__) . '/../lib/config.php', 'a+') or die("can't open config file");
         foreach ($this->config as $key => $val){
@@ -75,10 +95,10 @@ class ConfigMaker
         fclose($f);
     }
 
-//    private function _removeInstaller(){
-//        return (rename(dirname(__FILE__).'../public/installer.php', dirname(__FILE__).'../public/installer_bk.php'));
-//    }
-
+    /**
+     * The main method to begin the execution.
+     * @return bool
+     */
     public function exec(){
         try {
             $this->_checkDbConnection();
