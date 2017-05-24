@@ -12,6 +12,9 @@ use restApi\core\Model;
 
 class ProductModel extends Model
 {
+    /**
+     * @var string - The Product table.
+     */
     public $table = 'products';
     /**
      * @var array The attributes array maps the table columns to the model.
@@ -19,9 +22,11 @@ class ProductModel extends Model
      */
     public static $attributes = ['id', 'name', 'description', 'cost'];
 
+    /**
+     * @return array|mixed
+     */
     public function getProducts(){
-        $products = $this->fetchAll([]);
-        return $products;
+        return $this->fetchAll([]);
     }
 
     public function updateProduct($records, $productID){
@@ -58,7 +63,7 @@ class ProductModel extends Model
                 $result = $dbConnection->query($query);
 
                 if ($result && $result->num_rows>0)
-                    return $result->fetch_all();
+                    return $result->fetch_all(MYSQLI_ASSOC);
             } catch (\Exception $e){
                 throw $e;
             } finally{

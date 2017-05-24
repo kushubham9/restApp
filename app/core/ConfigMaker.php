@@ -12,28 +12,41 @@ namespace restApi\core;
 class ConfigMaker
 {
     /**
-     * @var Stores the configuration input provided by the user.
+     * @var - Stores the configuration input provided by the user.
      */
     private $config;
 
     /**
      * @var \MySQLi
      */
-    private $db;
+    private $db = false;
+
+    /**
+     * @var resource pointer to file
+     */
+    private $configFile = false;
 
     /**
      * ConfigMaker constructor.
      * @param $dbConfig
      */
-    public function __construct($dbConfig)
-    {
+    public function __construct($dbConfig) {
         $this->config = $dbConfig;
+        $this->configFile = fopen(dirname(__FILE__) . '/../lib/config.php', 'a+') or die("Can't open config file. Please check file permission.");
     }
 
     /**
      * Checks if the credentials of DB provided by the user is fine and working.
+     * @return bool
+     * @throws \Exception
      */
     private function _checkDbConnection(){
+        $requiredProperties = ['host','database','user','pass'];
+
+        foreach ($requiredProperties as $property){
+            if (!in_array($property, array_keys($this->config)))
+                throw new \Exception("Incomplete configuration provided.");
+        }
 
         $this->db = new \MySQLi(
             $this->config['host'],
@@ -41,11 +54,15 @@ class ConfigMaker
             $this->config['pass'],
             $this->config['database']);
 
-        $this->db->autocommit(TRUE);
+        // If configuration is invalid or unable to establish a link.
         if(mysqli_connect_errno())
         {
-            throw new \mysqli_sql_exception("Connection could not be established");
+            throw new \mysqli_sql_exception("Connection could not be established/");
+        } else{
+            $this->db->autocommit(TRUE);
+            return true;
         }
+
     }
 
     /**
@@ -54,6 +71,10 @@ class ConfigMaker
      * @return bool
      */
     private function _createTables(){
+        if ($this->db === false){
+            $this->_checkDbConnection();
+        }
+
 
         $query[] = "CREATE TABLE products
                     (
@@ -74,12 +95,18 @@ class ConfigMaker
 
         try {
             foreach ($query as $item) {
-                $stmt = $this->db->prepare($item);
-                $stmt->execute();
-                $stmt->close();
+                if ($stmt = $this->db->prepare($item)){
+                    $stmt->execute();
+                    $stmt->close();
+                }
             }
 
-            return ($this->_insertRecord());
+            if ($this->_insertRecord())
+                return true;
+
+            else
+                return false;
+
         } catch (\Exception $e){
             return false;
         } finally {
@@ -87,7 +114,15 @@ class ConfigMaker
         }
     }
 
+    /**
+     * Inserts a default user record in the user table
+     * @return bool
+     */
     private function _insertRecord(){
+        if ($this->db === false){
+            $this->_checkDbConnection();
+        }
+
         $query = 'insert into user(username,password,access_key) values (\'admin\',\'admin\',\'access_key\')';
         if($stmt = $this->db->prepare($query)){
             $stmt -> execute();
@@ -104,25 +139,32 @@ class ConfigMaker
      * app/lib/config.php
      */
     private function _writeConfigFile(){
-        $f = fopen(dirname(__FILE__) . '/../lib/config.php', 'a+') or die("can't open config file");
-        foreach ($this->config as $key => $val){
-            fwrite($f, '$config[\'db\'][\''. $key . '\'] = \'' . $val . '\';'."\n");
+        if ($this->configFile===false){
+            throw new \Exception("Config file not found.");
         }
-        fclose($f);
+
+        foreach ($this->config as $key => $val){
+            fwrite($this->configFile, '$config[\'db\'][\''. $key . '\'] = \'' . $val . '\';'."\n");
+        }
+        fclose($this->configFile);
     }
 
     /**
      * The main method to begin the execution.
      * @return bool
+     * @throws \Exception
      */
     public function exec(){
         try {
-            $this->_checkDbConnection();
-            $this->_createTables();
-            $this->_writeConfigFile();
-            return true;
+            if ($this->_checkDbConnection() && $this->_createTables())
+            {
+                $this->_writeConfigFile();
+                return true;
+            }
+            else
+                return false;
         } catch (\Exception $e){
-            return false;
+            throw $e;
         }
     }
 }

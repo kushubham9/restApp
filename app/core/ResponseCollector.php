@@ -17,9 +17,11 @@ class ResponseCollector
      */
     public static function buildJSON($data){
         header("Content-Type: application/json;charset=utf-8");
+
         if (isset($data['fail_status'])){
             http_response_code($data['fail_status']);
         }
+
         $json = json_encode($data, JSON_FORCE_OBJECT);
 
         if ($json === false) {

@@ -9,6 +9,8 @@
 namespace restApi\core;
 
 
+use restApi\lib\model\UserModel;
+
 class Controller
 {
     /**
@@ -43,11 +45,12 @@ class Controller
      */
     public function validateRequest($method){
         $acceptedRequests = $this->verbs();
-        if (isset($acceptedRequests[$method]) && in_array($_SERVER['REQUEST_METHOD'], $acceptedRequests[$method])){
-            return true;
+
+        if (isset($acceptedRequests[$method]) && !in_array($_SERVER['REQUEST_METHOD'], $acceptedRequests[$method])){
+            throw new \Exception("Request method not valid.");
         }
         else{
-            throw new \Exception("Request type not valid.");
+            return true;
         }
     }
 
@@ -58,10 +61,15 @@ class Controller
      */
     public function checkAccess($methodId){
         global $config;
+
         if (isset($this->accessRule[$methodId]) && $this->accessRule[$methodId] == '@'){
             if (isset($_GET['access_key']))
             {
+                // Get the user identification model from the configuration file.
                 $userModel = new $config['userModel']();
+                /**
+                 * @var $userModel UserModel
+                 */
                 if ($userModel->checkAccessByKey($_GET['access_key']))
                     return true;
             }

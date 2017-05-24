@@ -18,6 +18,10 @@ class ProductController extends Controller
         return (array_merge( parent::verbs(), ['search' => ['GET']]));
     }
 
+    /**
+     * Making the method private.
+     * @var array
+     */
     public $accessRule = [
         'index' => '@',
         'update' => '@',
@@ -27,12 +31,12 @@ class ProductController extends Controller
 
     public function searchMethod(){
         $model = new ProductModel();
-
         if (isset($_GET['name']) && $_GET['name'])
         {
             return $model->searchProduct(['name' => $_GET['name']]);
-        } else
-            return $this->indexMethod();
+        } else {
+            throw new \Exception("Search is only on basis of the product name. `name` is missing.");
+        }
     }
 
     public function indexMethod(){
@@ -40,6 +44,10 @@ class ProductController extends Controller
         return $model->getProducts();
     }
 
+    /**
+     * @return array
+     * @throws \Exception
+     */
     public function updateMethod(){
         $model = new ProductModel();
 
@@ -68,6 +76,10 @@ class ProductController extends Controller
         }
     }
 
+    /**
+     * @return array
+     * @throws \Exception
+     */
     public function createMethod(){
         $model = new ProductModel();
 
@@ -92,6 +104,10 @@ class ProductController extends Controller
         }
     }
 
+    /**
+     * @return array
+     * @throws \Exception
+     */
     public function deleteMethod(){
         $model = new ProductModel();
         parse_str(file_get_contents('php://input'), $_PATCH);
@@ -104,7 +120,7 @@ class ProductController extends Controller
         if ($model->deleteProduct($_PATCH['id'])){
             return [
                 'success' => true,
-                'message' => 'Product created.'
+                'message' => 'Product deleted.'
             ];
         } else{
             throw new \Exception("Unable to delete the product");

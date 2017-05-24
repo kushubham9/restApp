@@ -11,8 +11,6 @@ namespace restApi\core;
 
 class RouteController
 {
-
-    private $requestUri;
     /**
      * Each controller is identified by its controller ID. All lowercase.
      * @var string
@@ -30,41 +28,20 @@ class RouteController
     private $methodId;
     private $libDir = 'restApi\lib\controller';
 
-    public function __construct()
+    /**
+     * Init the route controller
+     */
+    private function _init()
     {
         $this->_parseRequestUrl();
         $this->_setControllerClass();
         $this->_setControllerMethod();
     }
 
-    private function _setControllerClass(){
-        // Get the controller class
-        if (!$this->controllerId){
-            global $config;
-            $this->controllerId = $config['defaultController'];
-        }
-
-        if ($this->controllerId){
-            $class = $this->libDir.'\\'.ucfirst($this->controllerId).'Controller';
-            try{
-                $this->controllerClass = new \ReflectionClass($class);
-            } catch (\Throwable $e){
-                throw $e;
-            }
-            $this->controllerObj = new $class();
-        }
-
-    }
-
-    private function _setControllerMethod(){
-        if (!$this->methodId) {
-            $this->methodId = $this->controllerClass->getStaticPropertyValue('defaultMethod');
-        }
-    }
-
+    /**
+     * Identify the controller and method from the URL.
+     */
     private function _parseRequestUrl(){
-        $this->requestUri = $_SERVER['REQUEST_URI'];
-
         if (isset($_GET['c']) && trim($_GET['c'])!=''){
             $this->controllerId = strtolower($_GET['c']);
         }
@@ -74,31 +51,76 @@ class RouteController
         }
     }
 
-    private function _invokeMethod(){
-        $reflectionMethod = $this->controllerClass->getMethod($this->methodId.'Method');
-//        $params = $reflectionMethod->getParameters();
-//        var_dump($params);
+    /**
+     * Sets the controller class through reflection and also instantiates an object of it.
+     * Default controller is called if not provided in the url argument.
+     */
+    private function _setControllerClass(){
+        // Get the controller class
+        if (!$this->controllerId){
+            global $config;
+            $this->controllerId = $config['defaultController'];
+        }
+
+        if ($this->controllerId){
+            $class = $this->libDir.'\\'.ucfirst($this->controllerId).'Controller';
+
+            //Create a Reflection Class
+            $this->controllerClass = new \ReflectionClass($class);
+
+            //Create Controller Object instance
+            $this->controllerObj = new $class();
+        }
+    }
+
+    /**
+     * Fetches the default method, incase it is not provided in the request string.
+     */
+    private function _setControllerMethod(){
+        if (!$this->methodId) {
+            $this->methodId = $this->controllerClass->getStaticPropertyValue('defaultMethod');
+        }
+    }
+
+    /**
+     * Begins the execution of the router controller.
+     */
+    public function exec(){
+        // Validate the input Request.
         try{
-            $response = $reflectionMethod->invoke($this->controllerObj);
-            ResponseCollector::buildJSON($response);
-        } catch (\Throwable $e){
+            // Initialize the route controller
+            $this->_init();
+
+            $this->controllerObj->validateRequest($this->methodId);
+            if (!$this->controllerObj->checkAccess($this->methodId)){
+                throw new \Exception("Not Allowed. This API is restricted.");
+            }
+            ResponseCollector::buildJSON($this->_invokeMethod());
+        } catch (\Exception $e){
             ResponseCollector::buildFailure($e);
         }
     }
 
-    public function exec(){
-        // Validate the input Request.
-        try{
-	    $this->controllerObj->validateRequest($this->methodId);
-            if (!$this->controllerObj->checkAccess($this->methodId)){
-                throw new \Exception("Not Allowed. This API is restricted.");
-            }
-	    else
-		$this->_invokeMethod();
-	
-        } catch (\Exception $e){
-            ResponseCollector::buildFailure($e);
+    /**
+     * Invokes the method of the controller.
+     * @return mixed
+     * @throws \Exception
+     */
+    private function _invokeMethod(){
+        if (!$this->controllerClass || !$this->controllerObj){
+            throw new \Exception("Controller not initialized.");
         }
-        
+
+        if (!$this->methodId) {
+            $this->methodId = $this->controllerClass->getStaticPropertyValue('defaultMethod');
+        }
+
+        // Calls the method instance through reflection.
+        $reflectionMethod = $this->controllerClass->getMethod($this->methodId.'Method');
+
+        // Get the response from the invoked function
+        $response = $reflectionMethod->invoke($this->controllerObj);
+
+        return $response;
     }
 }

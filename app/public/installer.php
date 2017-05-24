@@ -15,10 +15,17 @@ if (isset($_GET['submit']) && $_GET['submit'] == 'submit'){
     $config['pass'] = $_GET['password'];
 
     $installer = new restApi\core\ConfigMaker($config);
-    if ($installer->exec()){
-        unlink(__FILE__);
-        echo '<h2> Installation Successfull. </h2>';
-        die();
+    try{
+        if ($installer->exec()) {
+            if (unlink(__FILE__))
+                header("Location: index.php");
+            else
+                die ('Installation complete. Please delete the installer.php file');
+        }
+
+    }
+    catch (Exception $e){
+        echo "<h3> Error: ".$e->getMessage() ."</h3>";
     }
 }
 

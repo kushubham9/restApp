@@ -29,21 +29,29 @@ class Model
     /**
      * Establishes a DB Connection and returns a link.
      * @return \MySQLi
+     * @throws \Exception
      */
     public function _getDbConnection(){
         global $config;
-//        {
-            $this->db = new \MySQLi(
-                $config['db']['host'],
-                $config['db']['user'],
-                $config['db']['pass'],
-                $config['db']['database']);
 
-            if(mysqli_connect_errno())
-            {
-                throw new \mysqli_sql_exception("Connection could not be established");
-            }
-//        }
+        $requiredProperties = ['host','database','user','pass'];
+        foreach ($requiredProperties as $property){
+            if (!in_array($property,array_keys($config['db'])))
+                throw new \Exception("Database settings are not provided.");
+        }
+
+        $this->db = new \MySQLi(
+            $config['db']['host'],
+            $config['db']['user'],
+            $config['db']['pass'],
+            $config['db']['database']);
+
+        if(mysqli_connect_errno())
+        {
+            throw new \mysqli_sql_exception("Database connection could not be established");
+        }
+
+        $this->db->autocommit(TRUE);
         return $this->db;
     }
 
@@ -131,6 +139,8 @@ class Model
             return $result->num_rows;
         } catch (\Exception $e){
             throw $e;
+        } finally {
+            $this->_closeDbConnection();
         }
     }
 
@@ -143,18 +153,23 @@ class Model
      */
     public function fetchAll($options = []){
         try{
-            $this->_getDbConnection();
-            if (isset($_GET['page'])){
+            $this->_getDbConnection(); // Get the connection
+
+            /**
+             * See if page value has been provided.
+             */
+            if (isset($_GET['page']) && is_numeric($_GET['page'])){
                 $page = $_GET['page'];
                 $offset = ($page - 1) * $this->limitPerPage;
                 $options['LIMIT'] = $offset .', '.$this->limitPerPage;
             }
+
             else
                 $options['LIMIT'] = $this->limitPerPage;
 
             $query = $this->_buildSelectQuery(array_merge($options));
-            $result = $this->db->query($query);
 
+            $result = $this->db->query($query);
             if ($result && $result->num_rows > 0)
                 return $result->fetch_all(MYSQLI_ASSOC);
 
@@ -174,6 +189,9 @@ class Model
      * @return string - Returns the final query string.
      */
     private function _buildUpdateQuery($table, $whereCondition, $updateValues){
+        $whereClause = [];
+        $clause = [];
+
         $query = "UPDATE ". $table ." SET ";
         foreach ($updateValues as $key => $value){
             $clause[] = $key. ' = '. '\''. $value. '\'';
@@ -252,11 +270,15 @@ class Model
      * @return string
      */
     private function _deleteQuery($table, $condition){
+        $whereClause = [];
         $query = " DELETE from ".$table;
         foreach ($condition as $key=>$value){
             $whereClause[] = $key. ' = '. '\''. $value. '\'';
         }
-        $query .= ' WHERE '. implode(' AND ',$whereClause);
+        if (sizeof($whereClause) != 0)
+            $query .= ' WHERE '. implode(' AND ',$whereClause);
+        else
+            $query .= ' WHERE 1=1 ';
         return $query;
     }
 
