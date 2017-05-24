@@ -20,7 +20,7 @@ class ResponseCollector
         if (isset($data['fail_status'])){
             http_response_code($data['fail_status']);
         }
-        $json = json_encode($data);
+        $json = json_encode($data, JSON_FORCE_OBJECT);
 
         if ($json === false) {
             // Avoid echo of empty string (which is invalid JSON), and

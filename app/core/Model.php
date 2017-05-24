@@ -156,7 +156,7 @@ class Model
             $result = $this->db->query($query);
 
             if ($result && $result->num_rows > 0)
-                return $result->fetch_all();
+                return $result->fetch_all(MYSQLI_ASSOC);
 
             return [];
         } catch (\Exception $e){
