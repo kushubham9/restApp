@@ -88,14 +88,17 @@ class RouteController
 
     public function exec(){
         // Validate the input Request.
-        $this->controllerObj->validateRequest($this->methodId);
         try{
+	    $this->controllerObj->validateRequest($this->methodId);
             if (!$this->controllerObj->checkAccess($this->methodId)){
                 throw new \Exception("Not Allowed. This API is restricted.");
             }
+	    else
+		$this->_invokeMethod();
+	
         } catch (\Exception $e){
             ResponseCollector::buildFailure($e);
         }
-        $this->_invokeMethod();
+        
     }
 }
